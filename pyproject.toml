@@ -1,5 +1,5 @@
 [project]
-name = "stan"
+name = "argendata_stan"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"

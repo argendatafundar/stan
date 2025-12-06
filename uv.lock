@@ -8,6 +8,25 @@ version = "0.1.0"
 source = { git = "https://github.com/argendatafundar/datasets.git#05e14e8df45e7dacccc7305fc29f55a8c8bd88fd" }
 
 [[package]]
+name = "argendata-stan"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "argendata-datasets" },
+]
+
+[package.dev-dependencies]
+test = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "argendata-datasets", git = "https://github.com/argendatafundar/datasets.git" }]
+
+[package.metadata.requires-dev]
+test = [{ name = "pytest", specifier = ">=9.0.1" }]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -67,22 +86,3 @@ sdist = { url = "https://files.pythonhosted.org/packages/07/56/f013048ac4bc4c1d9
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0b/8b/6300fb80f858cda1c51ffa17075df5d846757081d11ab4aa35cef9e6258b/pytest-9.0.1-py3-none-any.whl", hash = "sha256:67be0030d194df2dfa7b556f2e56fb3c3315bd5c8822c6951162b92b32ce7dad", size = 373668, upload-time = "2025-11-12T13:05:07.379Z" },
 ]
-
-[[package]]
-name = "stan"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "argendata-datasets" },
-]
-
-[package.dev-dependencies]
-test = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "argendata-datasets", git = "https://github.com/argendatafundar/datasets.git" }]
-
-[package.metadata.requires-dev]
-test = [{ name = "pytest", specifier = ">=9.0.1" }]
