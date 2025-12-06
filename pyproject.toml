@@ -1,0 +1,14 @@
+[project]
+name = "stan"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "argendata_datasets@git+https://github.com/argendatafundar/datasets.git",
+]
+
+[dependency-groups]
+test = [
+    "pytest>=9.0.1",
+]
