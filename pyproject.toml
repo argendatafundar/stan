@@ -6,9 +6,15 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "argendata_datasets@git+https://github.com/argendatafundar/datasets.git",
+    "ev",
+    "pydantic>=2.12.5",
+    "tomli-w>=1.2.0",
 ]
 
 [dependency-groups]
 test = [
     "pytest>=9.0.1",
 ]
+
+[tool.uv.sources]
+ev = { git = "https://github.com/datos-fundar/ev" }
