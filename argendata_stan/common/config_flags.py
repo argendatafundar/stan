@@ -19,11 +19,19 @@ DATACLASS_CONFIG = dict(
 
 @dataclass(**DATACLASS_CONFIG)
 class ConfigFlags:
+    # static analysis flags
+
+    ## imports/dependencies
     detect_dependencies: bool = False
     parse_imports: bool = True
     parse_github_dependencies: bool = True
-    
+
+    ## input datasets
     detect_datasets: bool = False
+
+    # dynamic analysis flags
+    ## output datasets
+    detect_output_datasets: bool = True
 
     def __post_init__(self):
         if self.detect_datasets:

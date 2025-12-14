@@ -1,6 +1,6 @@
-from ..common import ConfigFlags, Analyzer
+from ...common import ConfigFlags, AnalyzerFunc
 
-analyze_datasets: Analyzer[dict]
+analyze_datasets: AnalyzerFunc[dict]
 def analyze_datasets(text: str, config: ConfigFlags, result: dict):
     if not config.detect_datasets:
         return result

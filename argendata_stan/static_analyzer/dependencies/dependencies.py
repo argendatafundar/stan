@@ -2,7 +2,7 @@ import ast
 import sys
 import re
 from typing import TypedDict
-from ..common import ConfigFlags, Analyzer, get_flags
+from ...common import ConfigFlags, AnalyzerFunc, get_flags
 from .parse_imports import parse_imports
 from .github import get_github_dependencies
 
@@ -10,6 +10,7 @@ IMPORT_TOKEN = "#'"
 def get_dependencies_by_line(text: str):
     return get_flags(text, IMPORT_TOKEN)
 
+analyze_dependencies: AnalyzerFunc[dict]
 def get_dependencies(text: str, dependencies: None|set[str] = None):
     dependencies = dependencies or set()
 
@@ -43,7 +44,7 @@ def get_dependencies(text: str, dependencies: None|set[str] = None):
     return dependencies - set(sys.stdlib_module_names)
 
 
-analyze_dependencies: Analyzer[dict]
+analyze_dependencies: AnalyzerFunc[dict]
 def analyze_dependencies(text: str, config: ConfigFlags, result: dict):
     if not config.detect_dependencies:
         return result

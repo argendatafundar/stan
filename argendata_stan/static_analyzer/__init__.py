@@ -1,2 +1,2 @@
 from .static_analyzer import StaticAnalyzer
-from .common import ConfigFlags
+from ..common import ConfigFlags

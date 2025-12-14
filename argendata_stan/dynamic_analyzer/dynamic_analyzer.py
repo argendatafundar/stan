@@ -1,18 +1,17 @@
-from ..common import ConfigFlags, Analyzer
-from . import dependencies, datasets
-        
-class StaticAnalyzer(Analyzer):
+from ..common import Analyzer, ConfigFlags
+from warnings import deprecated
+from . import datasets
+
+@deprecated("Deprecated class")
+class DynamicAnalyzer(Analyzer):
     config: ConfigFlags
-    
+
     def run(self, code: str, detect_config: bool = True):
         result = dict()
-
         config = self.config
         if detect_config:
             config = self.detect_config(code, config)
-        
-        result = dependencies.analyze(code, config, result)
+
         result = datasets.analyze(code, config, result)
 
         return result
-    

@@ -1,4 +1,4 @@
-from ..common import get_flags
+from ...common import get_flags
 from .parse_imports import parse_imports
 
 EXTERNAL_DEPENDENCY_TOKEN = '#@'

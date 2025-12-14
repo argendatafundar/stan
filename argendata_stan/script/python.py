@@ -62,7 +62,6 @@ class EnvironmentPython(Environment):
 
 class ScriptPython(Script):
     environment: EnvironmentPython = Field(default_factory=EnvironmentPython)
-    consumes: list[str] = Field(..., description='A list of datasets with version hashes that the script consumes.')
 
     @classmethod
     def load(cls, script_path: str, environment_path: str, produces: list[str], consumes: list[str]) -> 'ScriptPython':
@@ -102,24 +101,122 @@ class ScriptPython(Script):
             consumes=consumes,
         )
 
-    def _run(self, cwd: str):
-        cwd = pathlib.Path(cwd)
-        pyproject_path = cwd / "pyproject.toml"
+    @classmethod
+    def from_source(
+        cls,
+        filename: str,
+        source: str,
+        project_name: str,
+        config_flags: None|dict[str, bool] = None,
+    ):
+        from ..common import ConfigFlags
+        from ..static_analyzer import StaticAnalyzer
+        config_flags = config_flags or {
+            'detect_dependencies': True,
+            'parse_imports': True,
+            'parse_github_dependencies': True,
+            'detect_datasets': True,
+            'detect_output_datasets': True,
+        }
+
+        config_flags = ConfigFlags(**config_flags)
+
+        static_analyzer = StaticAnalyzer(config_flags)
+        static_analysis = static_analyzer.run(source, detect_config=False)
+
+        dependencies = static_analysis['dependencies']
+        consumes = static_analysis['datasets']
+
+        PRODUCED_DATASETS_FILENAME = 'produced_datasets.json'
+
+        modified_source = source
+        modified_source +=\
+f"""\
+from argendata_datasets.dsl.datasets import Client
+import pathlib, json
+pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().produced))
+"""
+
+        partial = cls.from_dependencies(
+            script_filename=filename,
+            script_content=modified_source,
+            dependencies=list(dependencies),
+            produces=[PRODUCED_DATASETS_FILENAME],
+            consumes=[
+                f'{x.name}@{x.version}'
+                for x in consumes
+            ],
+            project_name=project_name,
+        )
+
+        import tempfile, hashlib
+        with tempfile.TemporaryDirectory() as temp_dir:
+            partial_result = partial.run(target_dir=temp_dir)
+
+            if partial_result.process.is_failed():
+                raise partial_result.process.error.exception
+            
+            product = partial_result.product[PRODUCED_DATASETS_FILENAME]
+
+            produced_datasets: list[dict] = json.loads(product.read_text())
+            # [{'filename': ..., 'name': ..., **extra}]
+
+            from ..dynamic_analyzer.datasets.datasets import ExportedDataset
+
+            exported_datasets = []
+
+            for produced_dataset in produced_datasets:
+                dataset_filename = produced_dataset.pop('filename')
+                codigo = produced_dataset.pop('name')
+                extra = produced_dataset
+
+                file = pathlib.Path(temp_dir) / dataset_filename
+
+                assert file.exists(), f"Produced dataset {dataset_filename} not found"
+                
+                checksum = hashlib.sha1(file.read_bytes()).hexdigest()
+
+                extra['checksum'] = f'sha1:{checksum}'
+
+                exported_datasets.append(ExportedDataset(
+                    filename=dataset_filename,
+                    codigo=codigo,
+                    metadata=extra,
+                ))
+
+            return cls.from_dependencies(
+                script_filename=filename,
+                script_content=source,
+                dependencies=list(dependencies),
+                produces=[
+                    f'{x.codigo}({x.filename}@{x.metadata["checksum"]})'
+                    for x in exported_datasets
+                ],
+                consumes=[
+                    f'{x.name}@{x.version}'
+                    for x in consumes
+                ],
+                project_name=project_name,
+            )
+
+    def _run(self, target: str, verbose: bool = False):
+        target = pathlib.Path(target)
+        pyproject_path = target / "pyproject.toml"
 
         ev = Ev(
-            cwd=cwd,
-            debug=True,
+            cwd=target,
+            debug=verbose,
         )
 
         assert not pyproject_path.exists(), f"pyproject.toml already exsits: {pyproject_path.resolve()}"
 
         ev.init('python', makedirs=False)
 
-        if not (pathlib.Path(cwd) / 'pyproject.toml').exists():
+        if not (pathlib.Path(target) / 'pyproject.toml').exists():
             raise FileNotFoundError("'pyproject.toml' not found")
         
         # dump the pyproject.toml to the current directory
-        (pathlib.Path(cwd) / 'pyproject.toml').write_text(
+        (pathlib.Path(target) / 'pyproject.toml').write_text(
             tomli_w.dumps(self.environment.pyproject)
         )
 
@@ -135,7 +232,7 @@ class ScriptPython(Script):
         ev.sync()
 
         # dump the script to the current directory
-        (pathlib.Path(cwd) / self.filename).write_text(self.contents)
+        (pathlib.Path(target) / self.filename).write_text(self.contents)
 
         # run the script
         result = ev.run(
@@ -144,7 +241,7 @@ class ScriptPython(Script):
         )
 
         products = [
-            pathlib.Path(cwd) / product
+            pathlib.Path(target) / product
             for product in self.produces
         ]
 
@@ -153,62 +250,58 @@ class ScriptPython(Script):
             product=products
         )
 
+    def _process_products(self, products: list[pathlib.Path]) -> dict[str, pathlib.Path]:
+        products_dict = dict[str, pathlib.Path]()
+
+        for p in self.produces:
+            candidates = filter(
+                lambda file: file.name == p,
+                (file for file in products if file.exists() and file.is_file())
+            )
+
+            candidates = list(candidates)
+
+            if len(candidates) == 0:
+                raise FileNotFoundError(f"Product {p} not found")
+
+            assert len(candidates) == 1, f"Multiple products found for {p}"
+            products_dict[p] = candidates[0]
+
+        return products_dict
+
+    def _temp_run(self, verbose: bool = False):
+        import tempfile
+        target_dir = tempfile.mkdtemp(prefix=f'{self.filename.replace('.', '-')}_')
+        result = self._run(target_dir, verbose)
+        products = result.product
+        return result, products
+
     @override
-    def run(self, cwd: None|str = None):
+    def run(self, target_dir: None|str = None, verbose: bool = False):
         """
         Ejecuta el script en una carpeta y devuelve el resultado del proceso
         junto con el producto del script.
 
-        Si cwd es None, se crea una carpeta temporal y se ejecuta el script en ella.
-        El output queda en la carpeta temporal y se devuelve el path del output.
+        Si target_dir es None, se crea una carpeta temporal y se ejecuta el script en ella.
         """
-        is_temp = cwd is None
-
-        if is_temp:
-            import tempfile
-            cwd = tempfile.mkdtemp()
-        
-        try:
-            result = self._run(cwd)
-            cwd = pathlib.Path(cwd)
-
+        if target_dir is None:
+            result, products = self._temp_run(verbose)
+        else:
+            result = self._run(target_dir, verbose)
             products = result.product
-
-            if is_temp:
-                newtmp = tempfile.mkdtemp(prefix=f'{self.filename.replace('.', '-')}_')
-                products = [
-                    pathlib.Path(shutil.move(
-                        product, 
-                        cwd.parent / newtmp / product.name
-                    ))
-
-                    for product in products
-                ]
-
-            products_dict = dict[str, pathlib.Path]()
-
-            for p in self.produces:
-                candidates = filter(
-                    lambda file: file.name == p,
-                    (file for file in products if file.exists() and file.is_file())
-                )
-
-                candidates = list(candidates)
-
-                if len(candidates) == 0:
-                    raise FileNotFoundError(f"Product {p} not found")
-
-                assert len(candidates) == 1, f"Multiple products found for {p}"
-                products_dict[p] = candidates[0]
-
-            return ExecutionResult(
-                process=result.process, 
-                product=products_dict
-            )
         
-        finally:
-            if is_temp:
-                shutil.rmtree(cwd)
+        if result.process.is_failed():
+            return ExecutionResult(
+                process=result.process,
+                product=None,
+                error=result.process.error,
+            )
+        products_dict = self._process_products(products)
+
+        return ExecutionResult(
+            process=result.process, 
+            product=products_dict
+        )
 
         
         

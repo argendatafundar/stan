@@ -27,9 +27,9 @@ class Script[E: Environment](FileBase):
     environment: E = Field(default_factory=Environment)
     produces: list[str] = Field(
         ...,
-        description='A list of relative paths to the files that the script produces.',
+        description='A list of datasets with filename and checksum that the script produces.',
         examples=[
-            'output.csv',
+            'R1C1(output.csv@1234567890)',
         ]
     )
     consumes: list[str] = AbstractField(
