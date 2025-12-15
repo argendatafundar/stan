@@ -102,12 +102,73 @@ class ScriptPython(Script):
         )
 
     @classmethod
+    def _from_source(
+        cls,
+        partial,
+        target,
+        produced_datasets_filename,
+        filename,
+        source,
+        project_name,
+        dependencies,
+        consumes,
+    ):
+        partial_result = partial.run(target_dir=target)
+
+        if partial_result.process.is_failed():
+            raise partial_result.process.error.exception
+        
+        product = partial_result.product[produced_datasets_filename]
+
+        produced_datasets: list[dict] = json.loads(product.read_text())
+        # [{'filename': ..., 'name': ..., **extra}]
+
+        from ..dynamic_analyzer.datasets.datasets import ExportedDataset
+
+        exported_datasets = []
+
+        for produced_dataset in produced_datasets:
+            dataset_filename = produced_dataset.pop('filename')
+            codigo = produced_dataset.pop('name')
+            extra = produced_dataset
+
+            file = pathlib.Path(target) / dataset_filename
+
+            assert file.exists(), f"Produced dataset {dataset_filename} not found"
+            
+            checksum = hashlib.sha1(file.read_bytes()).hexdigest()
+
+            extra['checksum'] = f'sha1:{checksum}'
+
+            exported_datasets.append(ExportedDataset(
+                filename=dataset_filename,
+                codigo=codigo,
+                metadata=extra,
+            ))
+
+        return cls.from_dependencies(
+            script_filename=filename,
+            script_content=source,
+            dependencies=list(dependencies),
+            produces=[
+                f'{x.codigo}({x.filename}@{x.metadata["checksum"]})'
+                for x in exported_datasets
+            ],
+            consumes=[
+                f'{x.name}@{x.version}'
+                for x in consumes
+            ],
+            project_name=project_name,
+        )
+
+    @classmethod
     def from_source(
         cls,
         filename: str,
         source: str,
         project_name: str,
         config_flags: None|dict[str, bool] = None,
+        target: None|str = None,
     ):
         from ..common import ConfigFlags
         from ..static_analyzer import StaticAnalyzer
@@ -149,55 +210,31 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
             project_name=project_name,
         )
 
-        import tempfile, hashlib
-        with tempfile.TemporaryDirectory() as temp_dir:
-            partial_result = partial.run(target_dir=temp_dir)
-
-            if partial_result.process.is_failed():
-                raise partial_result.process.error.exception
-            
-            product = partial_result.product[PRODUCED_DATASETS_FILENAME]
-
-            produced_datasets: list[dict] = json.loads(product.read_text())
-            # [{'filename': ..., 'name': ..., **extra}]
-
-            from ..dynamic_analyzer.datasets.datasets import ExportedDataset
-
-            exported_datasets = []
-
-            for produced_dataset in produced_datasets:
-                dataset_filename = produced_dataset.pop('filename')
-                codigo = produced_dataset.pop('name')
-                extra = produced_dataset
-
-                file = pathlib.Path(temp_dir) / dataset_filename
-
-                assert file.exists(), f"Produced dataset {dataset_filename} not found"
-                
-                checksum = hashlib.sha1(file.read_bytes()).hexdigest()
-
-                extra['checksum'] = f'sha1:{checksum}'
-
-                exported_datasets.append(ExportedDataset(
-                    filename=dataset_filename,
-                    codigo=codigo,
-                    metadata=extra,
-                ))
-
-            return cls.from_dependencies(
-                script_filename=filename,
-                script_content=source,
-                dependencies=list(dependencies),
-                produces=[
-                    f'{x.codigo}({x.filename}@{x.metadata["checksum"]})'
-                    for x in exported_datasets
-                ],
-                consumes=[
-                    f'{x.name}@{x.version}'
-                    for x in consumes
-                ],
+        if target is None:
+            import tempfile
+            with tempfile.TemporaryDirectory() as temp_dir:
+                return cls._from_source(
+                    partial=partial,
+                    target=temp_dir,
+                    produced_datasets_filename=PRODUCED_DATASETS_FILENAME,
+                    filename=filename,
+                    source=source,
+                    project_name=project_name,
+                    dependencies=dependencies,
+                    consumes=consumes,
+                )
+        else:
+            return cls._from_source(
+                partial=partial,
+                target=target,
+                produced_datasets_filename=PRODUCED_DATASETS_FILENAME,
+                filename=filename,
+                source=source,
                 project_name=project_name,
+                dependencies=dependencies,
+                consumes=consumes,
             )
+            
 
     def _run(self, target: str, verbose: bool = False):
         target = pathlib.Path(target)
