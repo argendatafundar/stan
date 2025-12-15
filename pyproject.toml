@@ -19,5 +19,5 @@ test = [
 
 [tool.uv.sources]
 ev = { git = "https://github.com/datos-fundar/ev" }
-# argendata-datasets = { git = "https://github.com/argendatafundar/datasets.git" }
-argendata-datasets = { path = "../datasets", editable = true }
+argendata-datasets = { git = "https://github.com/argendatafundar/datasets.git" }
+# argendata-datasets = { path = "../datasets", editable = true }
