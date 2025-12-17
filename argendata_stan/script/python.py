@@ -1,6 +1,6 @@
 from typing import override
 from pydantic import BaseModel, Field
-from .common import Environment, Script, ExecutionResult
+from .common import Environment, Script, ExecutionResult, Metadata
 import hashlib, json
 from datetime import datetime as dt
 import shutil
@@ -60,8 +60,14 @@ class EnvironmentPython(Environment):
         
         return cls(pyproject=pyproject, dependencies=dependencies)
 
+from ..dynamic_analyzer.datasets.datasets import ExportedDataset
+
+class MetadataPython(Metadata):
+    exported_datasets: list[ExportedDataset] = Field(default_factory=list)
+
 class ScriptPython(Script):
     environment: EnvironmentPython = Field(default_factory=EnvironmentPython)
+    metadata: MetadataPython = Field(default_factory=MetadataPython)
 
     @classmethod
     def load(cls, script_path: str, environment_path: str, produces: list[str], consumes: list[str]) -> 'ScriptPython':
@@ -82,6 +88,7 @@ class ScriptPython(Script):
         project_description: str = 'Add your description here',
         project_readme: str = 'README.md',
         project_requires_python: None|str = None,
+        script_metadata: None|MetadataPython = None,
     ):
         environment = EnvironmentPython.from_dependencies(
             dependencies=dependencies,
@@ -91,8 +98,8 @@ class ScriptPython(Script):
             readme=project_readme,
             requires_python=project_requires_python,
         )
-        
-        return cls(
+
+        params = dict(
             filename=script_filename,
             contents=script_content,
             datetime=dt.now(),
@@ -100,6 +107,11 @@ class ScriptPython(Script):
             produces=produces,
             consumes=consumes,
         )
+
+        if script_metadata is not None:
+            params['metadata'] = script_metadata
+        
+        return cls(**params)
 
     @classmethod
     def _from_source(
@@ -122,8 +134,6 @@ class ScriptPython(Script):
 
         produced_datasets: list[dict] = json.loads(product.read_text())
         # [{'filename': ..., 'name': ..., **extra}]
-
-        from ..dynamic_analyzer.datasets.datasets import ExportedDataset
 
         exported_datasets = []
 
@@ -159,6 +169,7 @@ class ScriptPython(Script):
                 for x in consumes
             ],
             project_name=project_name,
+            script_metadata=MetadataPython(exported_datasets=exported_datasets),
         )
 
     @classmethod

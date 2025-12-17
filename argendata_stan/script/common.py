@@ -14,6 +14,8 @@ class Environment(BaseModel, ABC):
     def load(cls, path: str) -> 'Environment':
         ...
 
+class Metadata(BaseModel, ABC): ...
+
 class FileBase(BaseModel, ABC):
     filename: str = Field(..., repr=True)
     contents: str = Field(..., repr=False)
@@ -25,6 +27,7 @@ class ExecutionResult[A, B](BaseModel):
 
 class Script[E: Environment](FileBase):
     environment: E = Field(default_factory=Environment)
+    metadata: Metadata = Field(default_factory=Metadata)
     produces: list[str] = Field(
         ...,
         description='A list of datasets with filename and checksum that the script produces.',
