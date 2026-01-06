@@ -65,6 +65,22 @@ from ..dynamic_analyzer.datasets.datasets import ExportedDataset
 class MetadataPython(Metadata):
     exported_datasets: list[ExportedDataset] = Field(default_factory=list)
 
+def check_hash(hash, output_file, hash_value):
+    hash_method, hash_value = hash.split(':')
+    #import hashlib
+    hash: None|Callable[[bytes], str] = getattr(hashlib, hash_method, None)
+
+    if hash is None:
+        raise ValueError(f'Invalid hash method: {hash_method}')
+
+    hash = cast(Callable[[bytes], str], hash)
+    output_checksum = hash(output_file.read_bytes()).hexdigest()
+
+    if output_checksum != hash_value:
+        raise ValueError(f'Output checksum mismatch: expected {hash_value}, got {output_checksum}')
+    
+    return True
+
 class ScriptPython(Script):
     environment: EnvironmentPython = Field(default_factory=EnvironmentPython)
     metadata: MetadataPython = Field(default_factory=MetadataPython)
@@ -186,20 +202,10 @@ class ScriptPython(Script):
             raise ValueError(f'Invalid output format: {produces}')
 
         codigo, filename, hash = match.groups()
-        
-        hash_method, hash_value = hash.split(':')
-        #import hashlib
-        hash: None|Callable[[bytes], str] = getattr(hashlib, hash_method, None)
-
-        if hash is None:
-            raise ValueError(f'Invalid hash method: {hash_method}')
-
-        hash = cast(Callable[[bytes], str], hash)
         output_file = pathlib.Path(target) / filename
-        output_checksum = hash(output_file.read_bytes()).hexdigest()
-
-        if output_checksum != hash_value:
-            raise ValueError(f'Output checksum mismatch: expected {hash_value}, got {output_checksum}')
+        
+        is_valid_hash = check_hash(hash, output_file, hash_value)
+        assert is_valid_hash, f'Output checksum mismatch: expected {hash_value}, got {output_checksum}'
 
         return result
 
