@@ -204,8 +204,8 @@ class ScriptPython(Script):
         codigo, filename, hash = match.groups()
         output_file = pathlib.Path(target) / filename
         
-        is_valid_hash = check_hash(hash, output_file, hash_value)
-        assert is_valid_hash, f'Output checksum mismatch: expected {hash_value}, got {output_checksum}'
+        is_valid_hash = check_hash(hash, output_file)
+        assert is_valid_hash
 
         return result
 
