@@ -7,6 +7,10 @@ data/
 coverage.json
 .streamlit/
 
+*.pyc
+# Also remove all *.pyc files from git:
+# $ git rm --cached *.pyc
+
 # UV Package manager
 uv.lock
 

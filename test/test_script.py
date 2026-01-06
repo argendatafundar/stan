@@ -134,7 +134,7 @@ if __name__ == "__main__":
     # rich.print(result)
 
     if result.process.is_failed():
-        error = result.error
+        error = result.process.error
         traceback = error.traceback.decode("utf-8")
         rich.print(f'[red]{traceback}[/red]')
         raise Exception(traceback)

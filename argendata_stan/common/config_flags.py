@@ -25,6 +25,7 @@ class ConfigFlags:
     detect_dependencies: bool = False
     parse_imports: bool = True
     parse_github_dependencies: bool = True
+    parse_environment: bool = False
 
     ## input datasets
     detect_datasets: bool = False

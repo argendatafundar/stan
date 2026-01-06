@@ -43,6 +43,27 @@ def get_dependencies(text: str, dependencies: None|set[str] = None):
 
     return dependencies - set(sys.stdlib_module_names)
 
+ENVIRONMENT_TOKEN = "#^"
+def parse_environment(text: str):
+    flags = get_flags(text, ENVIRONMENT_TOKEN)
+    
+    if len(flags) != 1:
+        raise ValueError(f"Expected exactly one environment flag in {text}, got {len(flags)}")
+    
+    env = flags.get(0)
+    
+    if env is None:
+        raise ValueError(f"Null environment flag in {text}")
+
+    try:
+        import pathlib
+        env = pathlib.Path(env)
+    except Exception as e:
+        import traceback
+        exception = traceback.format_exc()
+        raise ValueError(f"{exception}\nEnvironment flag must be a valid path: {env!r}")
+
+    return env
 
 analyze_dependencies: AnalyzerFunc[dict]
 def analyze_dependencies(text: str, config: ConfigFlags, result: dict):
@@ -60,5 +81,8 @@ def analyze_dependencies(text: str, config: ConfigFlags, result: dict):
         dependencies.update(get_github_dependencies(text, dependencies))
 
     result["dependencies"] = dependencies
+    
+    if config.parse_environment:
+        result['environment'] = parse_environment(text)
 
     return result
