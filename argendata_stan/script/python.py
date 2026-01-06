@@ -1,4 +1,4 @@
-from typing import override
+from typing import override, cast, Callable
 from pydantic import BaseModel, Field
 from .common import Environment, Script, ExecutionResult, Metadata
 import hashlib, json
@@ -156,7 +156,7 @@ class ScriptPython(Script):
                 metadata=extra,
             ))
 
-        return cls.from_dependencies(
+        result = cls.from_dependencies(
             script_filename=filename,
             script_content=source,
             dependencies=list(dependencies),
@@ -171,6 +171,36 @@ class ScriptPython(Script):
             project_name=project_name,
             script_metadata=MetadataPython(exported_datasets=exported_datasets),
         )
+
+        if len(result.produces) == 0:
+            raise ValueError('Script must produce at least one output')
+        if len(result.produces) > 1:
+            raise ValueError('More than one output is not supported yet')
+        
+        produces = result.produces[0] # code(filename@hash)
+        import re
+        pattern = r'^([A-Za-z0-9]+)\(([^@()]+)@([^()]+)\)$'
+        match = re.match(pattern, produces)
+        if not match:
+            raise ValueError(f'Invalid output format: {produces}')
+
+        codigo, filename, hash = match.groups()
+        
+        hash_method, hash_value = hash.split(':')
+        #import hashlib
+        hash: None|Callable[[bytes], str] = getattr(hashlib, hash_method, None)
+
+        if hash is None:
+            raise ValueError(f'Invalid hash method: {hash_method}')
+
+        hash = cast(Callable[[bytes], str], hash)
+        output_file = pathlib.Path(target) / filename
+        output_checksum = hash(output_file.read_bytes()).hexdigest()
+
+        if output_checksum != hash_value:
+            raise ValueError(f'Output checksum mismatch: expected {hash_value}, got {output_checksum}')
+
+        return result
 
     @classmethod
     def from_source(
@@ -208,8 +238,7 @@ from argendata_datasets.dsl.datasets import Client
 import pathlib, json
 pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().produced))
 """
-
-        partial = cls.from_dependencies(
+        partial_result = cls.from_dependencies(
             script_filename=filename,
             script_content=modified_source,
             dependencies=list(dependencies),
@@ -221,30 +250,27 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
             project_name=project_name,
         )
 
+        from functools import partial as apply_args
+        from typing import Callable, cast
+
+        get_result = apply_args(
+            cls._from_source,
+            partial=partial_result,
+            # target = _____
+            produced_datasets_filename=PRODUCED_DATASETS_FILENAME,
+            filename=filename,
+            source=source,
+            project_name=project_name,
+            dependencies=dependencies,
+            consumes=consumes,
+        )
+
         if target is None:
             import tempfile
             with tempfile.TemporaryDirectory() as temp_dir:
-                return cls._from_source(
-                    partial=partial,
-                    target=temp_dir,
-                    produced_datasets_filename=PRODUCED_DATASETS_FILENAME,
-                    filename=filename,
-                    source=source,
-                    project_name=project_name,
-                    dependencies=dependencies,
-                    consumes=consumes,
-                )
+                return get_result(target=temp_dir)
         else:
-            return cls._from_source(
-                partial=partial,
-                target=target,
-                produced_datasets_filename=PRODUCED_DATASETS_FILENAME,
-                filename=filename,
-                source=source,
-                project_name=project_name,
-                dependencies=dependencies,
-                consumes=consumes,
-            )
+            return get_result(target=target)
             
 
     def _run(self, target: str, verbose: bool = False):

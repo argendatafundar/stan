@@ -14,17 +14,7 @@ wheels = [
 [[package]]
 name = "argendata-datasets"
 version = "0.1.0"
-source = { editable = "../datasets" }
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-dev = [{ name = "polars", specifier = ">=1.35.2" }]
-test = [
-    { name = "polars", specifier = ">=1.35.2" },
-    { name = "pytest", specifier = ">=9.0.1" },
-    { name = "python-dotenv", specifier = ">=1.2.1" },
-]
+source = { git = "https://github.com/argendatafundar/datasets.git#a32726d4e6e02919deacc31c9536b5a018d5f9d3" }
 
 [[package]]
 name = "argendata-stan"
@@ -45,7 +35,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "argendata-datasets", editable = "../datasets" },
+    { name = "argendata-datasets", git = "https://github.com/argendatafundar/datasets.git" },
     { name = "ev", git = "https://github.com/datos-fundar/ev" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "tomli-w", specifier = ">=1.2.0" },
