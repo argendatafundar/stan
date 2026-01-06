@@ -149,6 +149,7 @@ class ScriptPython(Script):
             checksum = hashlib.sha1(file.read_bytes()).hexdigest()
 
             extra['checksum'] = f'sha1:{checksum}'
+            extra['st_size'] = file.stat().st_size
 
             exported_datasets.append(ExportedDataset(
                 filename=dataset_filename,
