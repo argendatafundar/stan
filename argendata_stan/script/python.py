@@ -65,7 +65,7 @@ from ..dynamic_analyzer.datasets.datasets import ExportedDataset
 class MetadataPython(Metadata):
     exported_datasets: list[ExportedDataset] = Field(default_factory=list)
 
-def check_hash(hash, output_file, hash_value):
+def check_hash(hash, output_file):
     hash_method, hash_value = hash.split(':')
     #import hashlib
     hash: None|Callable[[bytes], str] = getattr(hashlib, hash_method, None)
