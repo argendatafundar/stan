@@ -77,7 +77,7 @@ def check_hash(hash, output_file):
     output_checksum = hash(output_file.read_bytes()).hexdigest()
 
     if output_checksum != hash_value:
-        raise ValueError(f'Output checksum mismatch: expected {hash_value}, got {output_checksum}')
+        return False
     
     return True
 
