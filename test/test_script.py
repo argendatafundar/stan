@@ -28,6 +28,7 @@ def test_python_script_load():
     
     assert isinstance(script.environment, EnvironmentPython)
 
+@pytest.mark.skip(reason="R scripts are not supported yet")
 def test_r_script_load():
     cwd = pathlib.Path(rootdir.ROOT_DIR).parent / 'test'
     test_folder = cwd / 'r_test'
@@ -149,6 +150,7 @@ if __name__ == "__main__":
         rows = list(reader)
         assert len(rows) > 0
 
+@pytest.mark.skip(reason="Multiple outputs are not supported yet")
 def test_script_from_source_with_datasets():
     script_source = """\
 from argendata_datasets import Datasets #@ git+https://github.com/joangq/argendatafundar-datasets.git

@@ -8,6 +8,8 @@ import pathlib
 from ev import Ev
 import tomllib, tomli_w
 
+from argendata_datasets.checksum import Hash, hash, digest
+
 def pyproject_base(
     name: str,
     dependencies: list[str],
@@ -153,6 +155,7 @@ class ScriptPython(Script):
 
         exported_datasets = []
 
+        _produces = []
         for produced_dataset in produced_datasets:
             dataset_filename = produced_dataset.pop('filename')
             codigo = produced_dataset.pop('name')
@@ -161,11 +164,14 @@ class ScriptPython(Script):
             file = pathlib.Path(target) / dataset_filename
 
             assert file.exists(), f"Produced dataset {dataset_filename} not found"
-            
-            checksum = hashlib.sha1(file.read_bytes()).hexdigest()
 
-            extra['checksum'] = f'sha1:{checksum}'
+            #checksum = hashlib.sha1(file.read_bytes()).hexdigest()
+            hashobj = digest.sha1(file)
+
+            extra['checksum'] = hashobj.to_str(include_filename=False)
             extra['st_size'] = file.stat().st_size
+
+            _produces.append(f'{codigo}({hashobj.to_str(include_filename=True)})')
 
             exported_datasets.append(ExportedDataset(
                 filename=dataset_filename,
@@ -173,18 +179,13 @@ class ScriptPython(Script):
                 metadata=extra,
             ))
 
+
         result = cls.from_dependencies(
             script_filename=filename,
             script_content=source,
             dependencies=list(dependencies),
-            produces=[
-                f'{x.codigo}({x.filename}@{x.metadata["checksum"]})'
-                for x in exported_datasets
-            ],
-            consumes=[
-                f'{x.name}@{x.version}'
-                for x in consumes
-            ],
+            produces=_produces,
+            consumes=[f'{x.name}@{x.version}' for x in consumes],
             project_name=project_name,
             script_metadata=MetadataPython(exported_datasets=exported_datasets),
         )
@@ -192,7 +193,8 @@ class ScriptPython(Script):
         if len(result.produces) == 0:
             raise ValueError('Script must produce at least one output')
         if len(result.produces) > 1:
-            raise ValueError('More than one output is not supported yet')
+            products_str = ', '.join(result.produces)
+            raise ValueError(f'More than one output is not supported yet. Expected 1, Got {len(result.produces)}: {products_str}')
         
         produces = result.produces[0] # code(filename@hash)
         import re

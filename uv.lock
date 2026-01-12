@@ -14,7 +14,7 @@ wheels = [
 [[package]]
 name = "argendata-datasets"
 version = "0.1.0"
-source = { git = "https://github.com/argendatafundar/datasets.git#a32726d4e6e02919deacc31c9536b5a018d5f9d3" }
+source = { git = "https://github.com/argendatafundar/datasets.git#d99d7a995ec349f84ca493de9c9e18de62c4a2eb" }
 
 [[package]]
 name = "argendata-stan"
@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
-test = [
+dev = [
     { name = "pytest" },
     { name = "rich" },
 ]
@@ -42,7 +42,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-test = [
+dev = [
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "rich", specifier = ">=14.2.0" },
 ]
