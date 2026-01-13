@@ -67,21 +67,14 @@ from ..dynamic_analyzer.datasets.datasets import ExportedDataset
 class MetadataPython(Metadata):
     exported_datasets: list[ExportedDataset] = Field(default_factory=list)
 
-def check_hash(hash, output_file):
-    hash_method, hash_value = hash.split(':')
-    #import hashlib
-    hash: None|Callable[[bytes], str] = getattr(hashlib, hash_method, None)
-
-    if hash is None:
-        raise ValueError(f'Invalid hash method: {hash_method}')
-
-    hash = cast(Callable[[bytes], str], hash)
-    output_checksum = hash(output_file.read_bytes()).hexdigest()
-
-    if output_checksum != hash_value:
-        return False
+def check_hash(hash_str, output_file: pathlib.Path):
+    from argendata_datasets import checksum
     
-    return True
+    hashobj = checksum.Hash.from_str(hash_str)
+    digest = getattr(checksum.digest, hashobj.method)
+    output_checksum = digest(output_file)
+
+    return hashobj.equals(output_checksum, filename_eq=False)
 
 class ScriptPython(Script):
     environment: EnvironmentPython = Field(default_factory=EnvironmentPython)
@@ -247,6 +240,7 @@ from argendata_datasets.dsl.datasets import Client
 import pathlib, json
 pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().produced))
 """
+        modified_source += '\n' # Python scripts must end with a newline
         partial_result = cls.from_dependencies(
             script_filename=filename,
             script_content=modified_source,
