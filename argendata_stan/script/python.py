@@ -127,7 +127,7 @@ class ScriptPython(Script):
     @classmethod
     def _from_source(
         cls,
-        partial,
+        partial: 'ScriptPython',
         target,
         produced_datasets_filename,
         filename,
@@ -139,7 +139,7 @@ class ScriptPython(Script):
         partial_result = partial.run(target_dir=target)
 
         if partial_result.process.is_failed():
-            raise RuntimeError(partial_result.process.error.exception.decode('utf8'))
+            raise partial_result.process.error.exception
         
         product = partial_result.product[produced_datasets_filename]
 
