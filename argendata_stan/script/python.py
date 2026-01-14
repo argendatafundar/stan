@@ -139,7 +139,7 @@ class ScriptPython(Script):
         partial_result = partial.run(target_dir=target)
 
         if partial_result.process.is_failed():
-            raise partial_result.process.error.exception
+            raise RuntimeException(partial_result.process.error.exception.decode('utf8'))
         
         product = partial_result.product[produced_datasets_filename]
 
