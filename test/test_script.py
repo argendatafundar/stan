@@ -1,3 +1,4 @@
+import tempfile
 import rootdir
 import pytest
 
@@ -197,3 +198,29 @@ another_dataset.save(pathlib.Path(ANOTHER_FILENAME).write_text('Hello, world!!')
     assert len(script.consumes) == 1
     assert script.consumes[0] == 'R1C0@latest'
 
+def test_python_run():
+    script_content =\
+"""
+from argendata_datasets import Datasets
+import pathlib
+
+dataset = Datasets.R1C0.register(
+    filename='output.csv',
+    foo='a',
+    bar=1,
+)
+
+dataset.save(pathlib.Path('output.csv').write_text('Hello, world!'))
+"""
+    script = ScriptPython.from_source(
+        filename='script.py',
+        source=script_content,
+        project_name='test-project'
+    )
+
+    tempdir = tempfile.TemporaryDirectory()
+    result = script.run(target_dir=tempdir.name)
+
+    assert result.process.is_successful()
+    print(result.product)
+    tempdir.cleanup()

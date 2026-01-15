@@ -237,3 +237,37 @@ from argendata_datasets import Datasets
     assert 0 == len(result['datasets'])
 
 
+def test_known_sources():
+    config = ConfigFlags(
+        detect_dependencies=True,
+        known_sources={
+        'argendata_datasets': 'argendata_datasets@git+https://github.com/argendatafundar/datasets.git'
+    })
+    analyzer = StaticAnalyzer(config)
+
+    result = analyzer.run(
+"""
+import argendata_datasets
+"""
+    )
+
+    assert 1 == len(result['dependencies'])
+    assert 'argendata_datasets@git+https://github.com/argendatafundar/datasets.git' in result['dependencies']
+    assert 'argendata_datasets' not in result['dependencies']
+    assert 'datasets' not in result['dependencies']
+
+    config = ConfigFlags(
+        detect_dependencies=True,
+    )
+
+    analyzer = StaticAnalyzer(config)
+    result = analyzer.run(
+"""
+import argendata_datasets
+"""
+    )
+
+    assert 1 == len(result['dependencies'])
+    assert 'argendata_datasets@git+https://github.com/argendatafundar/datasets.git' not in result['dependencies']
+    assert 'argendata_datasets' in result['dependencies']
+    assert 'datasets' not in result['dependencies']

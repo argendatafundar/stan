@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from functools import reduce
 from operator import or_ as union
 from .flags import get_flags
@@ -26,6 +26,7 @@ class ConfigFlags:
     parse_imports: bool = True
     parse_github_dependencies: bool = True
     parse_environment: bool = False
+    known_sources: dict[str, str] = field(default_factory=dict)
 
     ## input datasets
     detect_datasets: bool = False

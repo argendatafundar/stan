@@ -65,6 +65,13 @@ def parse_environment(text: str):
 
     return env
 
+def apply_known_sources(dependencies: set[str], known_sources: dict[str, str]):
+    for name, source in known_sources.items():
+        if name in dependencies:
+            dependencies.remove(name)
+            dependencies.add(source)
+    return dependencies
+
 analyze_dependencies: AnalyzerFunc[dict]
 def analyze_dependencies(text: str, config: ConfigFlags, result: dict):
     if not config.detect_dependencies:
@@ -81,6 +88,9 @@ def analyze_dependencies(text: str, config: ConfigFlags, result: dict):
         dependencies.update(get_github_dependencies(text, dependencies))
 
     result["dependencies"] = dependencies
+
+    if len(config.known_sources) > 0:
+        dependencies.update(apply_known_sources(dependencies, config.known_sources))
     
     if config.parse_environment:
         result['environment'] = parse_environment(text)

@@ -5,6 +5,7 @@ import hashlib, json
 from datetime import datetime as dt
 import shutil
 import pathlib
+import re
 from ev import Ev
 import tomllib, tomli_w
 
@@ -190,7 +191,6 @@ class ScriptPython(Script):
             raise ValueError(f'More than one output is not supported yet. Expected 1, Got {len(result.produces)}: {products_str}')
         
         produces = result.produces[0] # code(filename@hash)
-        import re
         pattern = r'([A-Za-z0-9_]+)\(([^@()]+)@([^()]+)\)$'
         match = re.match(pattern, produces)
         if not match:
@@ -221,6 +221,14 @@ class ScriptPython(Script):
             'parse_github_dependencies': True,
             'detect_datasets': True,
             'detect_output_datasets': True,
+            'known_sources': {
+                'ev': 'ev@git+https://github.com/datos-fundar/ev.git',
+                'argendata': 'argendata@git+https://github.com/argendatafundar/argendata-py.git',
+                'argendata_datasets': 'argendata_datasets@git+https://github.com/argendatafundar/datasets.git',
+                'argendata_stan': 'argendata_stan@git+https://github.com/argendatafundar/stan.git',
+                'argendata_cli': 'argendata_cli@git+https://github.com/argendatafundar/cli.git',
+                'argendata_utils': 'argendata_utils@git+https://github.com/argendatafundar/utils.git',
+            }
         }
 
         config_flags = ConfigFlags(**config_flags)
@@ -317,10 +325,16 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
             language='python',
         )
 
-        products = [
-            pathlib.Path(target) / product
-            for product in self.produces
-        ]
+        # Extract filenames from produce strings if they're in dataset format: R1C0(filename@hash)
+        pattern = r'^[A-Za-z0-9_]+\(([^@()]+)@[^()]+\)$'
+        products = []
+        for product in self.produces:
+            match = re.match(pattern, product)
+            if match:
+                filename = pathlib.Path(match.group(1)).name
+            else:
+                filename = product
+            products.append(pathlib.Path(target) / filename)
 
         return ExecutionResult(
             process=result, 
@@ -331,15 +345,29 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
         products_dict = dict[str, pathlib.Path]()
 
         for p in self.produces:
-            candidates = filter(
-                lambda file: file.name == p,
-                (file for file in products if file.exists() and file.is_file())
-            )
-
-            candidates = list(candidates)
+            # Extract filename from produce string if it's in dataset format: R1C0(filename@hash)
+            pattern = r'^[A-Za-z0-9_]+\(([^@()]+)@[^()]+\)$'
+            match = re.match(pattern, p)
+            if match:
+                filename = pathlib.Path(match.group(1)).name
+            else:
+                filename = p
+            
+            # First, find all files that match by name
+            all_candidates = [file for file in products if file.name == filename]
+            
+            # Then filter to only existing files
+            candidates = [file for file in all_candidates if file.exists() and file.is_file()]
 
             if len(candidates) == 0:
-                raise FileNotFoundError(f"Product {p} not found")
+                existing_files = [str(f) for f in products if f.exists()]
+                missing_files = [str(f) for f in all_candidates if not f.exists()]
+                error_msg = f"Product {p} not found. Expected filename: {filename}. "
+                if missing_files:
+                    error_msg += f"Files that don't exist: {missing_files}. "
+                if existing_files:
+                    error_msg += f"Existing files in products: {existing_files}."
+                raise FileNotFoundError(error_msg)
 
             assert len(candidates) == 1, f"Multiple products found for {p}"
             products_dict[p] = candidates[0]
@@ -348,9 +376,12 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
 
     def _temp_run(self, verbose: bool = False):
         import tempfile
-        target_dir = tempfile.mkdtemp(prefix=f'{self.filename.replace('.', '-')}_')
-        result = self._run(target_dir, verbose)
+        target_dir = tempfile.TemporaryDirectory(prefix=f'{self.filename.replace('.', '-')}_')
+        result = self._run(target_dir.name, verbose)
         products = result.product
+        # Store reference to temp dir to prevent cleanup until result is used
+        # The directory will be cleaned up when target_dir goes out of scope
+        result._temp_dir = target_dir
         return result, products
 
     @override
@@ -375,10 +406,14 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
             )
         products_dict = self._process_products(products)
 
-        return ExecutionResult(
+        final_result = ExecutionResult(
             process=result.process, 
             product=products_dict
         )
+        # Keep temp directory alive if it exists
+        if hasattr(result, '_temp_dir'):
+            final_result._temp_dir = result._temp_dir
+        return final_result
 
         
         
