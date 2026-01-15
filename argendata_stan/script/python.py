@@ -295,7 +295,7 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
 
         assert not pyproject_path.exists(), f"pyproject.toml already exsits: {pyproject_path.resolve()}"
 
-        ev.init('python', makedirs=False)
+        ev.init('python', makedirs=False, workspace=False)
 
         if not (pathlib.Path(target) / 'pyproject.toml').exists():
             raise FileNotFoundError("'pyproject.toml' not found")

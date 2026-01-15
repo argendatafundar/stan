@@ -8,6 +8,7 @@ from argendata_stan.script.r import EnvironmentR, ScriptR
 from datetime import datetime
 import rich, pathlib, shutil
 from ev import Ev
+from argendata_datasets.utils import Product
 
 def test_abstract_field():
     with pytest.raises(TypeError):
@@ -222,5 +223,14 @@ dataset.save(pathlib.Path('output.csv').write_text('Hello, world!'))
     result = script.run(target_dir=tempdir.name)
 
     assert result.process.is_successful()
+    
+    # The product.checksum.filename contains the path from the temp directory 
+    # used during from_source(), not from the directory passed to run(). 
+    # The test should use the actual file paths from result.product.values()
+    for produce_key, filepath in result.product.items():
+        assert filepath.exists(), f"Product file not found: {filepath}"
+        # Verify the produce key matches expected format
+        product = Product.from_str(produce_key)
+        assert product.checksum.filename is not None
     print(result.product)
     tempdir.cleanup()

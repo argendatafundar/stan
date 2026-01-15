@@ -14,7 +14,7 @@ wheels = [
 [[package]]
 name = "argendata-datasets"
 version = "0.1.0"
-source = { git = "https://github.com/argendatafundar/datasets.git#d13c4519160c9d55fcfba9e62645ef78a9164b29" }
+source = { git = "https://github.com/argendatafundar/datasets.git#9dd5f43840a3263b30e75c2d1a357a9b2168c7a4" }
 
 [[package]]
 name = "argendata-stan"
@@ -122,7 +122,7 @@ wheels = [
 [[package]]
 name = "ev"
 version = "0.1.0"
-source = { git = "https://github.com/datos-fundar/ev#5e337b5b51f147b1fbb996d19e368ec28ae5aa83" }
+source = { git = "https://github.com/datos-fundar/ev#b50061d72e8dfb37264f86727667fbe6f623ebef" }
 
 [[package]]
 name = "iniconfig"
