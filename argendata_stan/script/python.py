@@ -191,7 +191,7 @@ class ScriptPython(Script):
         
         produces = result.produces[0] # code(filename@hash)
         import re
-        pattern = r'^([A-Za-z0-9]+)\(([^@()]+)@([^()]+)\)$'
+        pattern = r'([A-Za-z0-9_]+)\(([^@()]+)@([^()]+)\)$'
         match = re.match(pattern, produces)
         if not match:
             raise ValueError(f'Invalid output format: {produces}')
