@@ -1,4 +1,5 @@
 from typing import override, cast, Callable
+import warnings
 from pydantic import BaseModel, Field
 from .common import Environment, Script, ExecutionResult, Metadata
 import hashlib, json
@@ -295,7 +296,10 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
 
         assert not pyproject_path.exists(), f"pyproject.toml already exsits: {pyproject_path.resolve()}"
 
-        ev.init('python', makedirs=False, workspace=False)
+        process_result = ev.init('python', makedirs=False, workspace=False)
+
+        if process_result.is_failed():
+            warnings.warn(f"Failed to initialize ev: {process_result.error}")
 
         # if not (pathlib.Path(target) / 'pyproject.toml').exists():
         #     raise FileNotFoundError("'pyproject.toml' not found")
