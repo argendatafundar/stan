@@ -299,7 +299,7 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
         process_result = ev.init('python', makedirs=False, workspace=False)
 
         if process_result.is_failed():
-            warnings.warn(f"Failed to initialize ev: {process_result.error}")
+            raise RuntimeError(f"Failed to initialize ev: {process_result.error}")
 
         # if not (pathlib.Path(target) / 'pyproject.toml').exists():
         #     raise FileNotFoundError("'pyproject.toml' not found")
@@ -380,7 +380,7 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
 
     def _temp_run(self, verbose: bool = False):
         import tempfile
-        target_dir = tempfile.TemporaryDirectory(prefix=f'{self.filename.replace('.', '-')}_')
+        target_dir = tempfile.TemporaryDirectory(prefix=f'{self.filename.replace('.', '-')}_', suffix='-temp')
         result = self._run(target_dir.name, verbose)
         products = result.product
         # Store reference to temp dir to prevent cleanup until result is used
