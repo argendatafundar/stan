@@ -301,6 +301,7 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
         import time
         pyproject_file = pathlib.Path(target) / 'pyproject.toml'
         for _ in range(4):  # Initial check + 3 retries
+            ev.init('python', makedirs=False, workspace=False)
             if pyproject_file.exists():
                 break
             time.sleep(0.1)
