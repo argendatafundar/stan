@@ -1,3 +1,4 @@
+import time
 from typing import override, cast, Callable
 from pydantic import BaseModel, Field
 from .common import Environment, Script, ExecutionResult, Metadata
@@ -297,7 +298,13 @@ pathlib.Path({PRODUCED_DATASETS_FILENAME!r}).write_text(json.dumps(Client().prod
 
         ev.init('python', makedirs=False, workspace=False)
 
-        if not (pathlib.Path(target) / 'pyproject.toml').exists():
+        import time
+        pyproject_file = pathlib.Path(target) / 'pyproject.toml'
+        for _ in range(4):  # Initial check + 3 retries
+            if pyproject_file.exists():
+                break
+            time.sleep(0.1)
+        else:
             raise FileNotFoundError("'pyproject.toml' not found")
         
         # dump the pyproject.toml to the current directory
