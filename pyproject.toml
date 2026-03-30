@@ -1,0 +1,27 @@
+[project]
+name = "argendata-stan"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "joangq", email = "jgquiroga@dc.uba.ar" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "lamedh @ git+https://github.com/joangq/lamedh",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.17,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "devtools",
+    "python-dotenv>=1.2.2",
+    "rich>=14.3.3",
+]
+
+[tool.uv.sources]
+devtools = { git = "https://github.com/joangq/devtools" }
+lamedh = { path = "../lamedh", editable = true }
