@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "argendata-datasets",
     "lamedh @ git+https://github.com/joangq/lamedh",
 ]
 
@@ -25,3 +26,4 @@ dev = [
 [tool.uv.sources]
 devtools = { git = "https://github.com/joangq/devtools" }
 lamedh = { path = "../lamedh", editable = true }
+argendata-datasets = { git = "https://github.com/joangq/argendata_datasets" }
