@@ -1,7 +1,8 @@
 from argendata_datasets import Dataset #' +argendata_api, +python-dotenv
 from pathlib import Path
 
-Dataset.R151C0.get(by=lambda x: 'DUMMYFUNC')
+x = Dataset.R151C0.get()
+print(x)
 # Dataset.ABC.download(to='')
 
 output = Path('output/test.txt')
