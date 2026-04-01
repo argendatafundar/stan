@@ -9,6 +9,7 @@ from argendata_datasets import Datasets
 class Result:
     completed_process: CompletedProcess
     datasets_metadata: Datasets._Representation
+    dotenv: None | Dotenv | dict = None
 
 class Runner(UvRunner):
     @override
@@ -23,4 +24,6 @@ class Runner(UvRunner):
     
     @override
     def run(self, script: PythonScript, space: None | UvWorkspace = None, dotenv: None | Dotenv | dict = None, verbose: None | bool = None):
-        return cast(Result, super().run(script, space, dotenv, verbose))
+        result = super().run(script, space, dotenv, verbose)
+        result.dotenv = dotenv
+        return result
