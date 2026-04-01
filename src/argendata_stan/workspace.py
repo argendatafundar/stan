@@ -1,4 +1,4 @@
-from lamedh.python import UvWorkspace
+from lamda.python import UvWorkspace
 
 class Workspace(UvWorkspace):
     pass

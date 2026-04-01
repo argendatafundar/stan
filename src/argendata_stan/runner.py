@@ -1,6 +1,6 @@
 from typing import cast, override
-from lamedh.python import Script as PythonScript, UvRunner, UvWorkspace
-from lamedh.common.files import Dotenv
+from lamda.python import Script as PythonScript, UvRunner, UvWorkspace
+from lamda.common.files import Dotenv
 from dataclasses import dataclass
 from subprocess import CompletedProcess
 from argendata_datasets import Datasets

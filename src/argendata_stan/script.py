@@ -1,5 +1,5 @@
-import lamedh.python
-from lamedh.python import GithubDependency
+import lamda.python
+from lamda.python import GithubDependency
 
 EXPORT_LINES = \
 """\
@@ -10,7 +10,7 @@ DATASETS_METADATA_PATH = Path(__file__).parent / 'datasets_metadata.json'
 DATASETS_METADATA_PATH.write_text(Datasets.model_dump_json(indent=2))
 """
 
-class Script(lamedh.python.Script):
+class Script(lamda.python.Script):
     known_sources = {
         **  ( GithubDependency('argendata_stan', 'joangq').as_source()
             | GithubDependency('argendata_datasets', 'joangq').as_source()
@@ -28,4 +28,4 @@ class Script(lamedh.python.Script):
         known_sources = Script.known_sources.copy()
         external_sources = kwargs.get('known_sources') or {}
         known_sources.update(external_sources)
-        return lamedh.python.Script.get_dependencies(content, known_sources=known_sources)
+        return lamda.python.Script.get_dependencies(content, known_sources=known_sources)
