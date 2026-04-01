@@ -17,12 +17,8 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "devtools",
+    "devtools @ git+https://github.com/joangq/devtools",
     "python-dotenv>=1.2.2",
     "rich>=14.3.3",
     "argendata-datasets@git+https://github.com/joangq/argendata_datasets",
 ]
-
-[tool.uv.sources]
-devtools = { git = "https://github.com/joangq/devtools" }
-lamda = { path = "../lamda", editable = true }
