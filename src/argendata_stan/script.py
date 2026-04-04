@@ -32,4 +32,4 @@ class Script(lamda.python.Script):
         # TODO: Por algun motivo esto no esta funcinando correctamente,
         # y se añaden las dependencias de 'known_sources'.
         # queda parcheado asi por ahora, pero habria que cambiarlo.
-        return list(set(analyzed_deps)|set(known_sources.keys()))
+        return list(set(analyzed_deps)|set(known_sources.values()))
