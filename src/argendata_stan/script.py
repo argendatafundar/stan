@@ -1,5 +1,6 @@
 import lamda.python
 from lamda.python import GithubDependency
+from packaging.requirements import Requirement
 
 EXPORT_LINES = \
 """\
@@ -12,7 +13,7 @@ DATASETS_METADATA_PATH.write_text(Datasets.model_dump_json(indent=2))
 
 class Script(lamda.python.Script):
     known_sources = {
-        **  ( GithubDependency('argendata_stan', 'joangq').as_source()
+        **  ( GithubDependency('stan', 'joangq').as_source()
             | GithubDependency('argendata_datasets', 'joangq').as_source()
             | GithubDependency('argendata_api', 'argendatafundar', 'internal-api').as_source()
             )
@@ -32,4 +33,9 @@ class Script(lamda.python.Script):
         # TODO: Por algun motivo esto no esta funcinando correctamente,
         # y se añaden las dependencias de 'known_sources'.
         # queda parcheado asi por ahora, pero habria que cambiarlo.
-        return list(set(analyzed_deps)|set(known_sources.values()))
+        return [
+            Requirement(dependency) for dependency in
+            ( set(analyzed_deps) 
+            | set(known_sources.values())
+            )
+        ]
