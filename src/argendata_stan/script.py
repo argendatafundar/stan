@@ -22,6 +22,7 @@ class Script(lamda.python.Script):
     def __post_init__(self):
         result = super().__post_init__()
         self.content += EXPORT_LINES
+        self.dependencies = type(self).get_dependencies(self.content)
         return result
     
     @staticmethod
@@ -30,16 +31,5 @@ class Script(lamda.python.Script):
         external_sources = kwargs.get('known_sources') or {}
         known_sources.update(external_sources)
         analyzed_deps =  lamda.python.Script.get_dependencies(content, known_sources=known_sources)
-        # TODO: Por algun motivo esto no esta funcinando correctamente,
-        # y se añaden las dependencias de 'known_sources'.
-        # queda parcheado asi por ahora, pero habria que cambiarlo.
-        return [
-            (
-                Requirement(dependency)
-                if not isinstance(dependency, Requirement)
-                else dependency
-            ) for dependency in
-            ( set(analyzed_deps) 
-            | set(known_sources.values())
-            )
-        ]
+        
+        return analyzed_deps
