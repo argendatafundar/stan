@@ -28,4 +28,8 @@ class Script(lamda.python.Script):
         known_sources = Script.known_sources.copy()
         external_sources = kwargs.get('known_sources') or {}
         known_sources.update(external_sources)
-        return lamda.python.Script.get_dependencies(content, known_sources=known_sources)
+        analyzed_deps =  lamda.python.Script.get_dependencies(content, known_sources=known_sources)
+        # TODO: Por algun motivo esto no esta funcinando correctamente,
+        # y se añaden las dependencias de 'known_sources'.
+        # queda parcheado asi por ahora, pero habria que cambiarlo.
+        return list(set(analyzed_deps)|set(known_sources.keys()))
