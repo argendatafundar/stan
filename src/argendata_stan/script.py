@@ -13,7 +13,7 @@ DATASETS_METADATA_PATH.write_text(Datasets.model_dump_json(indent=2))
 
 class Script(lamda.python.Script):
     known_sources = {
-        **  ( GithubDependency('stan', 'joangq').as_source()
+        **  ( GithubDependency('argendata_stan', 'joangq', 'stan').as_source()
             | GithubDependency('argendata_datasets', 'joangq').as_source()
             | GithubDependency('argendata_api', 'argendatafundar', 'internal-api').as_source()
             )
