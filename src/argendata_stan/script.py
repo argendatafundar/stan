@@ -34,7 +34,11 @@ class Script(lamda.python.Script):
         # y se añaden las dependencias de 'known_sources'.
         # queda parcheado asi por ahora, pero habria que cambiarlo.
         return [
-            Requirement(dependency) for dependency in
+            (
+                Requirement(dependency)
+                if not isinstance(dependency, Requirement)
+                else dependency
+            ) for dependency in
             ( set(analyzed_deps) 
             | set(known_sources.values())
             )
