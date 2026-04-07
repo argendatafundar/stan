@@ -15,7 +15,7 @@ class Script(lamda.python.Script):
     known_sources = {
         **  ( GithubDependency('argendata_stan', 'joangq', 'stan').as_source()
             | GithubDependency('argendata_datasets', 'joangq').as_source()
-            | GithubDependency('argendata_internal_client', 'joangq').as_source()
+            | GithubDependency('argendata_internal_client', 'joangq', 'argendata_internal_client').as_source()
             )
     }
 
