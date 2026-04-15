@@ -16,6 +16,7 @@ class Script(lamda.python.Script):
         **  ( GithubDependency('argendata_stan', 'argendatafundar', 'stan').as_source()
             | GithubDependency('argendata_datasets', 'argendatafundar', 'datasets').as_source()
             | GithubDependency('argendata_internal_client', 'argendatafundar', 'internal-client').as_source()
+            | GithubDependency('argendata_utils', 'argendatafundar', 'utils').as_source()
             )
     }
 
