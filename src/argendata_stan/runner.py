@@ -8,15 +8,30 @@ from argendata_datasets import Datasets
 @dataclass
 class Result:
     completed_process: CompletedProcess
-    datasets_metadata: Datasets._Representation
+    datasets_metadata: None | Datasets._Representation
     dotenv: None | Dotenv | dict = None
+
+    def raise_on_error(self):
+        if self.completed_process.returncode != 0:
+            stderr = self.completed_process.stderr.decode()
+            error_msg = f'There was an error while executing the runtime space. {stderr}'
+            raise RuntimeError(error_msg)
+            
+        return self
 
 class Runner(UvRunner):
     @override
     def space_run(space: UvWorkspace, verbose: bool = False, **kwargs: object):
         result = UvRunner.space_run(space, verbose, **kwargs)
-        datasets_metadata_json = space['datasets_metadata.json'].read_text(encoding='utf8')
-        datasets_metadata = Datasets._Representation.model_validate_json(datasets_metadata_json)
+
+        datasets_metadata = None
+        try:
+            datasets_metadata_json = space['datasets_metadata.json'].read_text(encoding='utf8')
+            datasets_metadata = Datasets._Representation.model_validate_json(datasets_metadata_json)
+        except FileNotFoundError as e:
+            if result.returncode == 0:
+                raise e
+        
         return Result(
             completed_process=result, 
             datasets_metadata=datasets_metadata
