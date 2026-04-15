@@ -8,7 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "lamda @ git+https://github.com/joangq/lamda",
+    "lamda @ git+https://github.com/datos-Fundar/lamda",
 ]
 
 [build-system]
@@ -20,6 +20,6 @@ dev = [
     "devtools @ git+https://github.com/joangq/devtools",
     "python-dotenv>=1.2.2",
     "rich>=14.3.3",
-    "argendata-datasets@git+https://github.com/joangq/argendata_datasets",
+    "argendata-datasets@git+https://github.com/argendatafundar/datasets",
     "pytest>=9.0.2",
 ]
