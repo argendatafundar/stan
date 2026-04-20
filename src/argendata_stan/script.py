@@ -13,12 +13,22 @@ DATASETS_METADATA_PATH.write_text(Datasets.model_dump_json(indent=2))
 
 class Script(lamda.python.Script):
     known_sources = {
-        **  ( GithubDependency('argendata_stan', 'argendatafundar', 'stan').as_source()
-            | GithubDependency('argendata_datasets', 'argendatafundar', 'datasets').as_source()
-            | GithubDependency('argendata_internal_client', 'argendatafundar', 'internal-client').as_source()
-            | GithubDependency('argendata_utils', 'argendatafundar', 'utils').as_source()
-            )
+        **  ( GithubDependency('argendata-stan', 'argendatafundar', 'stan').as_source()
+            | GithubDependency('argendata-datasets', 'argendatafundar', 'datasets').as_source()
+            | GithubDependency('argendata-internal-client', 'argendatafundar', 'internal-client').as_source()
+            | GithubDependency('argendata-utils', 'argendatafundar', 'utils').as_source()
+            ),
+        
+        # Retrocompatibility alias
+        'argendata_api': 'argendata-internal-client@git+https://github.com/argendatafundar/internal-client'
     }
+
+    def __post_init__(self):
+        result = super().__post_init__()
+        self.content += EXPORT_LINES
+        self.dependencies = type(self).get_dependencies(self.content)
+        return result
+    
 
     def __post_init__(self):
         result = super().__post_init__()

@@ -1,7 +1,7 @@
 from argendata_datasets import Dataset #' +argendata_api, +python-dotenv
 from pathlib import Path
 
-x = Dataset.R151C0.get(by=lambda x: 'HELLOWORLD')
+x = Dataset.R151C0.get(by=lambda dataset_id, version: 'HELLOWORLD')
 print(x)
 # Dataset.ABC.download(to='')
 
